@@ -1,8 +1,8 @@
 % Creates a Heatmap of the evaluate function used in the Action Evaluator
 
 %Field constants
-height = 600; 
-width = 940;
+height = 60; 
+width = 94;
 
 z = zeros(height, width);
   
@@ -13,7 +13,6 @@ for r = 1:height
 end
 
 fig = figure;
-
 colormap('jet');
 imagesc(z);
 colorbar;

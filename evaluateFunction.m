@@ -24,12 +24,15 @@
 
 function evaluateState = evaluateFunction (x, y)
   
+  x = x - 47;
+  y = y - 30;
+  
   %Defining weight functions
-  BALL_X_CORD_WEIGHT = 1;
-  BALL_OPPONENT_GOAL_DISTANCE_WEIGHT = 1;
-  KICKABLE_FROM_POS_WEIGHT = 1;
-  HOLDER_SELF_WEIGHT = 1;
-  OPPONENTS_DISTANCE_WEIGHT = 1;
+  BALL_X_CORD_WEIGHT = 1.61;
+  BALL_OPPONENT_GOAL_DISTANCE_WEIGHT = 0.88;
+  KICKABLE_FROM_POS_WEIGHT = 0.24;
+  HOLDER_SELF_WEIGHT = 0.10;
+  OPPONENTS_DISTANCE_WEIGHT = 8.59;
   PLAYERS_PER_SIDE = 6;
   
   %Reading the enemy data from enemies.txt
@@ -51,18 +54,57 @@ function evaluateState = evaluateFunction (x, y)
     end
   end
   
-  if (920<=x && x<=940 && 250<=y && y<=350)
-    #disp("Inside enemy goal")
-    evaluateState = 2000;
-  elseif (0<=x && x<=20 && 250<=y && y<=350)
-    #disp("Inside ally goal")
-    evaluateState = -2000;
-  elseif (x<=20 || x>=920 || y<=0 || y>=900)
-    #disp("Out of bounds")
-    evaluateState = -1000;
+  if (45<=x && x<=47 && -5<=y && y<=5)
+    # Inside enemy goal
+    evaluateState = 100;
+  elseif (-47<=x && x<=-45 && -5<=y && y<=5)
+    # Inside ally goal
+    evaluateState = -100;
+  elseif (x<=-45 || x>=45 || y<=-30 || y>=30)
+    # Out of bounds
+    evaluateState = -50;
   else
-    #disp("Basic evaluation")
+    # Basic evaluation
     evaluateState = BALL_X_CORD_WEIGHT * x;
+    
+    # Distance to opp goal
+    dx = abs(47-x);
+    dy = abs(0-y);
+    distOppGoal = sqrt(dx*dx + dy*dy);
+    evaluateState += BALL_OPPONENT_GOAL_DISTANCE_WEIGHT * max(0,30-distOppGoal);
+    
+    # Bonus for free kicking/chipping situations
+    someoneCanKick = false;
+    for i = 1:PLAYERS_PER_SIDE
+      if( visibility(i, enemies, allies) )
+        someoneCanKick = true;
+      end
+    end
+    
+    if (someoneCanKick)
+      evaluateState += KICKABLE_FROM_POS_WEIGHT * 100;
+     
+      if(visibility(holder, enemies, allies))
+        evaluateState += HOLDER_SELF_WEIGHT * 50;
+      end
+    end
+    
+    # Considers closest opponent to ball distance
+    oppMinDistanceToBall = 99999;
+    for i=1:PLAYERS_PER_SIDE
+      dx = enemies(i,:)(1) - x;
+      dy = enemies(i,:)(2) - y;
+      oppDistanceToBall = sqrt(dx*dx + dy*dy);
+      if (oppDistanceToBall <= oppMinDistanceToBall)
+        oppMinDistanceToBall = oppDistanceToBall;
+      end
+    end
+    
+    evaluateState -= OPPONENTS_DISTANCE_WEIGHT * max(0, 5-oppMinDistanceToBall);
+    
   end
+  
+  x = x + 47;
+  y = y + 30;
   
 endfunction
